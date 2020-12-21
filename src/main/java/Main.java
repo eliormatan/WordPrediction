@@ -13,6 +13,7 @@ public class Main {
         private static final AWSCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new ProfileCredentialsProvider().getCredentials());
         private static AmazonElasticMapReduce mapReduce;
 
+
     public static void main(String[] args) {
         mapReduce = AmazonElasticMapReduceClientBuilder.standard()
                 .withCredentials(credentialsProvider)
@@ -80,4 +81,8 @@ public class Main {
         String jobFlowId = runJobFlowResult.getJobFlowId();
         System.out.println("Ran job flow with id: " + jobFlowId);
     }
+
+    public enum Counter{N_SUM};
+
+
 }
