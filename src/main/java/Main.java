@@ -23,7 +23,7 @@ public class Main {
         HadoopJarStepConfig divide = new HadoopJarStepConfig()
                 .withJar("s3://dsp-211-ass2/divide.jar")
 //                .withMainClass("divide.Mainclass") todo:find mainclass name
-                .withArgs("s3://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/3gram/data","s3://dsp-211-ass2/divideOut");
+                .withArgs("s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/1gram/data","s3://dsp-211-ass2/divideOut");
         StepConfig stepDivide = new StepConfig()
                 .withName("divide")
                 .withHadoopJarStep(divide)
@@ -61,10 +61,10 @@ public class Main {
 
         JobFlowInstancesConfig instances = new JobFlowInstancesConfig()
                 .withInstanceCount(2)
-                .withMasterInstanceType(InstanceType.M1_SMALL.toString())
-                .withSlaveInstanceType(InstanceType.M1_SMALL.toString())
-                .withHadoopVersion("2.6.0")
-                .withEc2KeyName("yourkey") // todo: change keypair
+                .withMasterInstanceType(InstanceType.M4_LARGE.toString())
+                .withSlaveInstanceType(InstanceType.M4_LARGE.toString())
+                .withHadoopVersion("2.7.3")
+                .withEc2KeyName("dspass1") // todo: change keypair
                 .withKeepJobFlowAliveWhenNoSteps(false)
                 .withPlacement(new PlacementType("us-east-1a"));
 
@@ -74,8 +74,9 @@ public class Main {
 //                .withSteps(stepDivide,stepCalcNT,stepCalcProb,stepSortResults)
                 .withSteps(stepDivide)
                 .withLogUri("s3n://dsp-211-ass2/logs/")
-                .withServiceRole("EMR_DefaultRole")
-                .withJobFlowRole("EMR_EC2_DefaultRole");
+                .withServiceRole("EMR_Role")
+                .withJobFlowRole("EMR_EC2_Role")
+                .withReleaseLabel("emr-5.32.0");
 
         RunJobFlowResult runJobFlowResult = mapReduce.runJobFlow(runFlowRequest);
         String jobFlowId = runJobFlowResult.getJobFlowId();
