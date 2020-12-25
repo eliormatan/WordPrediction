@@ -6,35 +6,42 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
 
-public class Divide {
+public class CalcProb {
+
+    public enum Counter{N_SUM};
 
     public static class MapperClass extends Mapper<LongWritable,Text,Text,Text> {
+
         @Override
         public void setup(Context context)  throws IOException, InterruptedException {
         }
 
         @Override
         public void map(LongWritable rowNumber, Text tabSeparatedData, Context context) throws IOException,  InterruptedException {
-            Text occurences = new Text();
-            String[] splitArray = tabSeparatedData.toString().split("\t");
-            Text currGram=new Text(splitArray[0]);
-            if(rowNumber.get()%2==1){
-                occurences.set(String.format("%s\t%s","0",splitArray[2]));
-
-            }else {
-                occurences.set(String.format("%s\t%s",splitArray[2],"0"));
+            String[] data = tabSeparatedData.toString().split("\t");
+            long r = Long.parseLong(data[1])+Long.parseLong(data[2]);
+            String rKey = Long.toString(r);
+            if(Long.parseLong(data[1])!=0){
+                String r1Val = data[2]+"\t1";
+                context.write(new Text(rKey),new Text(r1Val));
             }
-            context.write(currGram,occurences);
+            if(Long.parseLong(data[2])!=0){
+                String r2Val = data[1]+"\t1";
+                context.write(new Text(rKey),new Text(r2Val));
+            }
+            context.getCounter(Counter.N_SUM).increment(r);
         }
 
         @Override
         public void cleanup(Context context)  throws IOException, InterruptedException {
+            System.out.println("SENT N :::::::::::::::: "+ context.getCounter(Counter.N_SUM).getValue());
         }
 
     }
@@ -46,18 +53,17 @@ public class Divide {
         }
 
         @Override
-        public void reduce(Text nGram, Iterable<Text> occurences , Context context) throws IOException,  InterruptedException {
-            long even=0L;
-            long odd=0L;
-            for(Text occ:occurences){
-                String[] splitOcc = occ.toString().split("\t");
-                even+=Long.parseLong(splitOcc[0]);
-                odd+=Long.parseLong(splitOcc[1]);
+        public void reduce(Text rKey, Iterable<Text> rValues , Context context) throws IOException,  InterruptedException {
+            long Nr = 0;
+            long Tr = 0;
+            for (Text val : rValues){
+                String[] values  = val.toString().split("\t");
+                Tr += Long.parseLong(values[0]);
+                Nr += Long.parseLong(values[1]);
             }
-            Text occSum = new Text();
-            occSum.set(String.format("%d\t%d",even, odd));
+            String TrNr = Tr + "\t" + Nr;
+            context.write(rKey,new Text(TrNr));
 
-            context.write(nGram,occSum);
         }
 
         @Override
@@ -66,22 +72,31 @@ public class Divide {
     }
 
     public static class ReducerClass extends Reducer<Text,Text,Text,Text> {
+        private long N;
         @Override
         public void setup(Context context)  throws IOException, InterruptedException {
+            Configuration conf = context.getConfiguration();
+            Cluster cluster = new Cluster(conf);
+            Job currentJob = cluster.getJob(context.getJobID());
+            N = currentJob.getCounters().findCounter(Counter.N_SUM).getValue();
+            System.out.println("N SUM IS ::::::::::::::::::::::::::::::::::::" + N);
+
         }
 
         @Override
-        public void reduce(Text nGram, Iterable<Text> occurences, Context context) throws IOException,  InterruptedException {
-            long even=0L;
-            long odd=0L;
-            for(Text occ:occurences){
-                String[] splitOcc = occ.toString().split("\t");
-                even+=Long.parseLong(splitOcc[0]);
-                odd+=Long.parseLong(splitOcc[1]);
+        public void reduce(Text rKey, Iterable<Text> rValues, Context context) throws IOException,  InterruptedException {
+            double Nr = 0;
+            double Tr = 0;
+            for (Text val : rValues){
+                String[] values  = val.toString().split("\t");
+                Tr += Long.parseLong(values[0]);
+                Nr += Long.parseLong(values[1]);
             }
-            Text occSum = new Text();
-            occSum.set(String.format("%d\t%d",even, odd));
-            context.write(nGram,occSum);
+            double p = 0;
+            if(Nr != 0){
+                p = Tr/((double)N *Nr);
+            }
+            context.write(rKey,new Text(Double.toString(p)));
         }
 
         @Override
@@ -89,11 +104,10 @@ public class Divide {
         }
     }
 
-
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf,"DivideJob");
-        job.setJarByClass(Divide.class);
+        Job job = Job.getInstance(conf,"CalcProbJob");
+        job.setJarByClass(CalcProb.class);
         job.setMapperClass(MapperClass.class);
         job.setReducerClass(ReducerClass.class);
 //        job.setCombinerClass(CombinerClass.class);
@@ -101,7 +115,7 @@ public class Divide {
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
