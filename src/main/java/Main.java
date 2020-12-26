@@ -23,30 +23,30 @@ public class Main {
         HadoopJarStepConfig divide = new HadoopJarStepConfig()
                 .withJar("s3://dsp-211-ass2/divide.jar")
 //                .withMainClass("divide.Mainclass") todo:find mainclass name
-                .withArgs("s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/1gram/data","s3://dsp-211-ass2/divideOut");
+                .withArgs("s3://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/3gram/data","s3://dsp-211-ass2/divideOut");
         StepConfig stepDivide = new StepConfig()
                 .withName("divide")
                 .withHadoopJarStep(divide)
                 .withActionOnFailure("TERMINATE_JOB_FLOW");
 
         //STEP2
-        HadoopJarStepConfig calcNT = new HadoopJarStepConfig()
-                .withJar("s3://dsp-211-ass2/calcNT.jar")
-//                .withMainClass("divide.Mainclass") todo:find mainclass name
-                .withArgs("s3://dsp-211-ass2/divideOut","s3://dsp-211-ass2/calcNTOut");
-        StepConfig stepCalcNT = new StepConfig()
-                .withName("calcNT")
-                .withHadoopJarStep(calcNT)
-                .withActionOnFailure("TERMINATE_JOB_FLOW");
-
-        //STEP3
         HadoopJarStepConfig calcProb = new HadoopJarStepConfig()
                 .withJar("s3://dsp-211-ass2/calcProb.jar")
 //                .withMainClass("divide.Mainclass") todo:find mainclass name
-                .withArgs("s3://dsp-211-ass2/calcNTOut","s3://dsp-211-ass2/calcProbOut");
+                .withArgs("s3://dsp-211-ass2/divideOut","s3://dsp-211-ass2/calcProbOut");
         StepConfig stepCalcProb = new StepConfig()
                 .withName("calcProb")
                 .withHadoopJarStep(calcProb)
+                .withActionOnFailure("TERMINATE_JOB_FLOW");
+
+        //STEP3
+        HadoopJarStepConfig joinResults = new HadoopJarStepConfig()
+                .withJar("s3://dsp-211-ass2/joinResults.jar")
+//                .withMainClass("divide.Mainclass") todo:find mainclass name
+                .withArgs("s3://dsp-211-ass2/divideOut", "s3://dsp-211-ass2/calcProbOut", "s3://dsp-211-ass2/joinResultsOut");
+        StepConfig stepJoinResults = new StepConfig()
+                .withName("joinResults")
+                .withHadoopJarStep(joinResults)
                 .withActionOnFailure("TERMINATE_JOB_FLOW");
 
 		//STEP4
@@ -63,7 +63,7 @@ public class Main {
                 .withInstanceCount(2)
                 .withMasterInstanceType(InstanceType.M4_LARGE.toString())
                 .withSlaveInstanceType(InstanceType.M4_LARGE.toString())
-                .withHadoopVersion("2.7.3")
+                .withHadoopVersion("2.6.0")
                 .withEc2KeyName("dspass1") // todo: change keypair
                 .withKeepJobFlowAliveWhenNoSteps(false)
                 .withPlacement(new PlacementType("us-east-1a"));
@@ -71,8 +71,8 @@ public class Main {
         RunJobFlowRequest runFlowRequest = new RunJobFlowRequest()
                 .withName("wordPrediction")
                 .withInstances(instances)
-//                .withSteps(stepDivide,stepCalcNT,stepCalcProb,stepSortResults)
-                .withSteps(stepDivide)
+//                .withSteps(stepDivide,stepCalcProb,stepJoinResults,stepSortResults)
+                .withSteps(stepJoinResults)
                 .withLogUri("s3n://dsp-211-ass2/logs/")
                 .withServiceRole("EMR_Role")
                 .withJobFlowRole("EMR_EC2_Role")
@@ -82,8 +82,5 @@ public class Main {
         String jobFlowId = runJobFlowResult.getJobFlowId();
         System.out.println("Ran job flow with id: " + jobFlowId);
     }
-
-    public enum Counter{N_SUM};
-
 
 }

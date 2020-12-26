@@ -41,7 +41,6 @@ public class CalcProb {
 
         @Override
         public void cleanup(Context context)  throws IOException, InterruptedException {
-            System.out.println("SENT N :::::::::::::::: "+ context.getCounter(Counter.N_SUM).getValue());
         }
 
     }
@@ -79,8 +78,6 @@ public class CalcProb {
             Cluster cluster = new Cluster(conf);
             Job currentJob = cluster.getJob(context.getJobID());
             N = currentJob.getCounters().findCounter(Counter.N_SUM).getValue();
-            System.out.println("N SUM IS ::::::::::::::::::::::::::::::::::::" + N);
-
         }
 
         @Override
