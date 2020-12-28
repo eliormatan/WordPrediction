@@ -71,17 +71,13 @@ public class joinResults {
             String[] key = rKey.toString().split(":");
             String r = key[0];
             String type = key[1];
-            System.out.println(r + "\t" + type);
             if(currentR == null && type.equals("1")){
                 List<Text> dataList = Lists.newArrayList(data);
                 prob = dataList.get(0).toString();
-                System.out.println("Probability ================= " + prob);
                 currentR = r;
             }
             if(r.equals(currentR) && type.equals("2")){
-                System.out.println("writing "+prob+" probability to threeGrams:");
                 for (Text threeGram : data){
-                    System.out.println(threeGram.toString());
                     context.write(threeGram,new Text(prob));
                 }
                 currentR = null;
