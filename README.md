@@ -1,8 +1,8 @@
 # WordPrediction
 
 
-Elior Matan : 308470715        eliorma@post.bgu.ac.il
-Ibrahim Awad : 318260585        awadi@post.bgu.ac.il
+Elior Matan       
+Ibrahim Awad      
 
 
 
