@@ -1,13 +1,10 @@
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -16,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 
 
-public class joinResults {
+public class JoinResults {
 
     public static class MapperClass1 extends Mapper<LongWritable,Text,Text,Text> {
         @Override
@@ -100,19 +97,15 @@ public class joinResults {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf,"joinResultsJob");
-        job.setJarByClass(joinResults.class);
-//        job.setMapperClass(MapperClass.class);
+        job.setJarByClass(JoinResults.class);
         job.setReducerClass(ReducerClass.class);
-//        job.setCombinerClass(CombinerClass.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-//        job.setInputFormatClass(SequenceFileInputFormat.class);
         MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, MapperClass1.class);
         MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, MapperClass2.class);
         job.setOutputFormatClass(TextOutputFormat.class);
-//        FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
         job.setPartitionerClass(PartitionerClass.class);
         System.exit(job.waitForCompletion(true) ? 0 : 1);

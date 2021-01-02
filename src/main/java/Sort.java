@@ -1,5 +1,6 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -25,12 +26,9 @@ public class Sort {
         @Override
         public void map(LongWritable rowNumber, Text tabSeparatedData, Context context) throws IOException,  InterruptedException {
             String[] data=tabSeparatedData.toString().split("\t");
-            System.out.println("data splitted"+ Arrays.toString(data));
-            String[] threeGram=data[0].split(" ");
-            System.out.println("one word "+ threeGram[0]+ " sec word "+threeGram[1]);
-            String firstTwoAsc = threeGram[0]+" "+threeGram[1];
-            System.out.println("prob to double"+Double.valueOf(data[1]));
-            double compProb = 1-Double.valueOf(data[1]);
+            String[] threeGram=tabSeparatedData.toString().split("\\s+");
+            String firstTwoAsc = threeGram[0]+threeGram[1];
+            double compProb = 1-Double.parseDouble(data[1]);
             context.write(new Text(firstTwoAsc+compProb),tabSeparatedData);
         }
 
@@ -64,8 +62,9 @@ public class Sort {
         @Override
         public void reduce(Text twoGramAndCompProb, Iterable<Text> threeGramsAndProb, Context context) throws IOException,  InterruptedException {
             for(Text currGramAndProb: threeGramsAndProb){
-                String[] output=currGramAndProb.toString().split("/t");
-                context.write(new Text(output[0]),new Text(output[1]));
+                String[] output=currGramAndProb.toString().split("\t");
+                Text prob = new Text(String.format("%.20f",Double.parseDouble(output[1])));
+                context.write(new Text(output[0]),prob);
             }
         }
 
@@ -81,7 +80,6 @@ public class Sort {
         job.setJarByClass(Sort.class);
         job.setMapperClass(Sort.MapperClass.class);
         job.setReducerClass(Sort.ReducerClass.class);
-//        job.setCombinerClass(CombinerClass.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);

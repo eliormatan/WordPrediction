@@ -1,11 +1,12 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Cluster;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -15,7 +16,7 @@ import java.io.IOException;
 
 public class CalcProb {
 
-    public enum Counter{N_SUM};
+    public enum Counter{N_SUM}
 
     public static class MapperClass extends Mapper<LongWritable,Text,Text,Text> {
 
@@ -107,7 +108,7 @@ public class CalcProb {
         job.setJarByClass(CalcProb.class);
         job.setMapperClass(MapperClass.class);
         job.setReducerClass(ReducerClass.class);
-//        job.setCombinerClass(CombinerClass.class);
+        job.setCombinerClass(CombinerClass.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
